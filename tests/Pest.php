@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Tests;
+namespace Stout\Tests;
 
-use Scotch\Application;
+use Stout\Application;
 
 // Define helper function to boot a test application instance
 function bootTestApp(): Application

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Container;
+namespace Stout\Container;
 
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
-use Scotch\Config\Config;
-use Scotch\Exceptions\ScotchException;
-use Scotch\Support\ServiceProvider;
+use Stout\Config\Config;
+use Stout\Exceptions\StoutException;
+use Stout\Support\ServiceProvider;
 
 final class ContainerFactory
 {
@@ -18,7 +18,7 @@ final class ContainerFactory
      * @param Config $config
      * @param array<class-string<ServiceProvider>> $providers
      * @param array<string, mixed> $definitions Additional DI definitions
-     * @throws ScotchException
+     * @throws StoutException
      */
     public static function build(Config $config, array $providers = [], array $definitions = []): ContainerInterface
     {
@@ -33,8 +33,8 @@ final class ContainerFactory
 
         foreach ($providers as $providerClass) {
             if (!class_exists($providerClass) || !is_subclass_of($providerClass, ServiceProvider::class)) {
-                throw new ScotchException(
-                    message: "Invalid service provider: {$providerClass}. Must implement Scotch\\Support\\ServiceProvider.",
+                throw new StoutException(
+                    message: "Invalid service provider: {$providerClass}. Must implement Stout\\Support\\ServiceProvider.",
                     context: ['provider' => $providerClass]
                 );
             }
@@ -47,7 +47,7 @@ final class ContainerFactory
         try {
             $container = $builder->build();
         } catch (\Exception $e) {
-            throw new ScotchException(
+            throw new StoutException(
                 message: "Failed to compile the dependency injection container.",
                 previous: $e
             );

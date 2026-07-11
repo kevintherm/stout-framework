@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Log;
+namespace Stout\Log;
 
 use Psr\Log\AbstractLogger;
 

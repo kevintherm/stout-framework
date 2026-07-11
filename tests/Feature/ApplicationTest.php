@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Tests\Feature;
+namespace Stout\Tests\Feature;
 
-use Scotch\Application;
-use Scotch\Config\Config;
-use Scotch\Console\Kernel as ConsoleKernel;
+use Stout\Application;
+use Stout\Config\Config;
+use Stout\Console\Kernel as ConsoleKernel;
 
 test('application boots with configuration and kernel bindings', function () {
     $basePath = realpath(__DIR__ . '/../../');

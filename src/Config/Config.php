@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Config;
+namespace Stout\Config;
 
-use Scotch\Exceptions\ScotchException;
+use Stout\Exceptions\StoutException;
 
 /**
  * Immutable configuration bag. Loaded from a flat or nested PHP array.
@@ -38,14 +38,14 @@ final class Config
      * Retrieve a required value — throws if the key is absent or null.
      *
      * @return mixed
-     * @throws ScotchException
+     * @throws StoutException
      */
     public function require(string $key): mixed
     {
         $value = $this->resolve($key);
 
         if ($value === null) {
-            throw new ScotchException(
+            throw new StoutException(
                 message: "Required config key \"{$key}\" is missing or null.",
                 context: ['key' => $key],
             );
@@ -105,12 +105,12 @@ final class Config
     /**
      * Load a Config from a PHP file that returns an array.
      *
-     * @throws ScotchException
+     * @throws StoutException
      */
     public static function fromFile(string $path): self
     {
         if (!file_exists($path)) {
-            throw new ScotchException(
+            throw new StoutException(
                 message: "Config file not found: {$path}",
                 context: ['path' => $path],
             );
@@ -119,7 +119,7 @@ final class Config
         $data = require $path;
 
         if (!is_array($data)) {
-            throw new ScotchException(
+            throw new StoutException(
                 message: "Config file must return an array: {$path}",
                 context: ['path' => $path],
             );

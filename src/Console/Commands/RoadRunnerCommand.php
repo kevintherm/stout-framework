@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Console\Commands;
+namespace Stout\Console\Commands;
 
-use Scotch\Console\Command;
+use Stout\Console\Command;
 
 final class RoadRunnerCommand extends Command
 {
@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
-use Scotch\Application;
+use Stout\Application;
 
 $app = require __DIR__ . '/bootstrap/app.php';
 $app->runRoadRunner();

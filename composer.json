@@ -1,6 +1,6 @@
 {
     "version": "0.0.1",
-    "name": "scotch/scotch",
+    "name": "stout/stout",
     "description": "Lightweight opinionated PHP framework built on Slim with strict types, PHP-DI, and RoadRunner.",
     "type": "library",
     "license": "MIT",
@@ -9,7 +9,7 @@
         "slim",
         "php-di",
         "roadrunner",
-        "scotch"
+        "stout"
     ],
     "authors": [
         {
@@ -36,16 +36,16 @@
     },
     "autoload": {
         "psr-4": {
-            "Scotch\\": "src/"
+            "Stout\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Scotch\\Tests\\": "tests/"
+            "Stout\\Tests\\": "tests/"
         }
     },
     "bin": [
-        "bin/scotch"
+        "bin/stout"
     ],
     "scripts": {
         "test": "pest --colors=always",

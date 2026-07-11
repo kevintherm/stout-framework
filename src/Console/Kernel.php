@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Console;
+namespace Stout\Console;
 
 use Psr\Container\ContainerInterface;
-use Scotch\Console\Command;
-use Scotch\Console\Commands\ListCommand;
-use Scotch\Console\Commands\RoadRunnerCommand;
-use Scotch\Console\Commands\ServeCommand;
-use Scotch\Exceptions\ScotchException;
+use Stout\Console\Command;
+use Stout\Console\Commands\ListCommand;
+use Stout\Console\Commands\RoadRunnerCommand;
+use Stout\Console\Commands\ServeCommand;
+use Stout\Exceptions\StoutException;
 
 final class Kernel
 {
@@ -43,7 +43,7 @@ final class Kernel
     public function register(string $class): void
     {
         if (!class_exists($class) || !is_subclass_of($class, Command::class)) {
-            throw new ScotchException("Invalid command class: {$class}. Must extend Scotch\\Console\\Command.");
+            throw new StoutException("Invalid command class: {$class}. Must extend Stout\\Console\\Command.");
         }
 
         $command = new $class($this->container);

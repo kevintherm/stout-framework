@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Http;
+namespace Stout\Http;
 
 use Psr\Container\ContainerInterface;
 use Slim\App;

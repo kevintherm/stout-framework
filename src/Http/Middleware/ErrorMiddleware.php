@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Http\Middleware;
+namespace Stout\Http\Middleware;
 
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use Scotch\Exceptions\ScotchException;
+use Stout\Exceptions\StoutException;
 use Throwable;
 
 final readonly class ErrorMiddleware implements MiddlewareInterface
@@ -43,7 +43,7 @@ final readonly class ErrorMiddleware implements MiddlewareInterface
                 $payload['exception'] = get_class($exception);
                 $payload['trace'] = explode("\n", $exception->getTraceAsString());
                 
-                if ($exception instanceof ScotchException) {
+                if ($exception instanceof StoutException) {
                     $payload['context'] = $exception->getContext();
                 }
             }

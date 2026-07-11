@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Console\Commands;
+namespace Stout\Console\Commands;
 
-use Scotch\Config\Config;
-use Scotch\Console\Command;
-use Scotch\Console\Commands\RoadRunnerCommand;
+use Stout\Config\Config;
+use Stout\Console\Command;
+use Stout\Console\Commands\RoadRunnerCommand;
 
 final class ServeCommand extends Command
 {
@@ -104,7 +104,7 @@ final class ServeCommand extends Command
         $possiblePaths = [
             __DIR__ . '/../../../ascii.txt',
             getcwd() . '/ascii.txt',
-            getcwd() . '/vendor/scotch/scotch/ascii.txt',
+            getcwd() . '/vendor/stout/stout/ascii.txt',
         ];
 
         $composerJsonPath = __DIR__ . '/../../../composer.json';

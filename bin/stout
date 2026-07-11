@@ -17,7 +17,7 @@ if (file_exists($projectAutoloader)) {
     exit(1);
 }
 
-use Scotch\Application;
+use Stout\Application;
 
 $bootstrapFile = $cwd . '/bootstrap/app.php';
 if (file_exists($bootstrapFile)) {

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Exceptions;
+namespace Stout\Exceptions;
 
 use RuntimeException;
 
 /**
- * Base exception for all Scotch framework errors.
+ * Base exception for all Stout framework errors.
  *
  * @phpstan-type Context array<string, mixed>
  */
-final class ScotchException extends RuntimeException
+final class StoutException extends RuntimeException
 {
     /** @param Context $context */
     public function __construct(

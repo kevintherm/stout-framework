@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Support;
+namespace Stout\Support;
 
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 
 /**
- * Contract for Scotch service providers.
+ * Contract for Stout service providers.
  *
  * Providers are the canonical way to bind services into the container and
  * run any bootstrapping that requires a fully built container.

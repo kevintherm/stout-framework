@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Console\Commands;
+namespace Stout\Console\Commands;
 
-use Scotch\Console\Command;
-use Scotch\Console\Kernel as ConsoleKernel;
+use Stout\Console\Command;
+use Stout\Console\Kernel as ConsoleKernel;
 
 final class ListCommand extends Command
 {
@@ -49,7 +49,7 @@ final class ListCommand extends Command
         $possiblePaths = [
             __DIR__ . '/../../../ascii.txt',
             getcwd() . '/ascii.txt',
-            getcwd() . '/vendor/scotch/scotch/ascii.txt',
+            getcwd() . '/vendor/stout/stout/ascii.txt',
         ];
 
         $composerJsonPath = __DIR__ . '/../../../composer.json';

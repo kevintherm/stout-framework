@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Console;
+namespace Stout\Console;
 
 use Psr\Container\ContainerInterface;
 

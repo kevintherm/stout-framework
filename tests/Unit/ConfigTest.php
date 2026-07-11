@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Tests\Unit;
+namespace Stout\Tests\Unit;
 
-use Scotch\Config\Config;
-use Scotch\Exceptions\ScotchException;
+use Stout\Config\Config;
+use Stout\Exceptions\StoutException;
 
 test('it can retrieve values with dot notation', function () {
     $config = new Config([
         'app' => [
-            'name' => 'Scotch',
+            'name' => 'Stout',
             'debug' => true,
         ],
     ]);
 
-    expect($config->get('app.name'))->toBe('Scotch')
+    expect($config->get('app.name'))->toBe('Stout')
         ->and($config->get('app.debug'))->toBeTrue()
         ->and($config->get('app.nonexistent', 'default'))->toBe('default');
 });
@@ -25,13 +25,13 @@ test('it throws exception on require when key is missing', function () {
         'foo' => 'bar',
     ]);
 
-    expect(fn() => $config->require('baz'))->toThrow(ScotchException::class);
+    expect(fn() => $config->require('baz'))->toThrow(StoutException::class);
 });
 
 test('it merges config arrays correctly', function () {
     $config1 = new Config([
         'app' => [
-            'name' => 'Scotch',
+            'name' => 'Stout',
             'debug' => false,
         ],
     ]);
@@ -45,7 +45,7 @@ test('it merges config arrays correctly', function () {
 
     $merged = $config1->merge($config2);
 
-    expect($merged->get('app.name'))->toBe('Scotch')
+    expect($merged->get('app.name'))->toBe('Stout')
         ->and($merged->get('app.debug'))->toBeTrue()
         ->and($merged->get('app.url'))->toBe('http://localhost');
 });

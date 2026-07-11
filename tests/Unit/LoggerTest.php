@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Tests\Unit;
+namespace Stout\Tests\Unit;
 
-use Scotch\Log\Logger;
+use Stout\Log\Logger;
 use Psr\Log\LoggerInterface;
 
 test('logger implements LoggerInterface', function () {
-    $tempFile = sys_get_temp_dir() . '/scotch_test_' . uniqid() . '.log';
+    $tempFile = sys_get_temp_dir() . '/stout_test_' . uniqid() . '.log';
     $logger = new Logger($tempFile);
 
     expect($logger)->toBeInstanceOf(LoggerInterface::class);
@@ -19,7 +19,7 @@ test('logger implements LoggerInterface', function () {
 });
 
 test('logger writes messages to file with correct formatting', function () {
-    $tempFile = sys_get_temp_dir() . '/scotch_test_' . uniqid() . '.log';
+    $tempFile = sys_get_temp_dir() . '/stout_test_' . uniqid() . '.log';
     $logger = new Logger($tempFile);
 
     $logger->info('Hello, info level!', ['user' => 'Kevin']);
@@ -35,7 +35,7 @@ test('logger writes messages to file with correct formatting', function () {
 });
 
 test('logger creates directory if it does not exist', function () {
-    $tempDir = sys_get_temp_dir() . '/scotch_nested_' . uniqid();
+    $tempDir = sys_get_temp_dir() . '/stout_nested_' . uniqid();
     $tempFile = $tempDir . '/app.log';
     $logger = new Logger($tempFile);
 

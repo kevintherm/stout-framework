@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Scotch\Http;
+namespace Stout\Http;
 
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use Scotch\Config\Config;
-use Scotch\Http\Middleware\ErrorMiddleware;
+use Stout\Config\Config;
+use Stout\Http\Middleware\ErrorMiddleware;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Slim\Http\Factory\DecoratedResponseFactory;
