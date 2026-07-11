@@ -1,0 +1,32 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$cwd = getcwd();
+
+$projectAutoloader = $cwd . '/vendor/autoload.php';
+$frameworkAutoloader = __DIR__ . '/../vendor/autoload.php';
+
+if (file_exists($projectAutoloader)) {
+    require $projectAutoloader;
+} elseif (file_exists($frameworkAutoloader)) {
+    require $frameworkAutoloader;
+} else {
+    fwrite(STDERR, "Error: composer dependencies are not installed. Run 'composer install' first.\n");
+    exit(1);
+}
+
+use Scotch\Application;
+
+$bootstrapFile = $cwd . '/bootstrap/app.php';
+if (file_exists($bootstrapFile)) {
+    /** @var Application $app */
+    $app = require $bootstrapFile;
+} else {
+    $app = new Application($cwd);
+}
+
+$exitCode = $app->runCli($argv);
+
+exit($exitCode);

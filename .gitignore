@@ -1,0 +1,25 @@
+/vendor/
+/.phpunit.cache/
+/.pest/
+/coverage/
+
+# RoadRunner binary (downloaded by `scotch rr:install`)
+/bin/rr
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+*.phar
