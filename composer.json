@@ -1,5 +1,5 @@
 {
-    "version": "0.0.1",
+    "version": "0.0.3",
     "name": "stout/stout",
     "description": "Lightweight opinionated PHP framework built on Slim with strict types, PHP-DI, and RoadRunner.",
     "type": "library",
