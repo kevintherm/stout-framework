@@ -30,18 +30,17 @@ final class ServeCommand extends Command
         $host = is_scalar($hostVal) ? (string) $hostVal : '127.0.0.1';
         $port = is_scalar($portVal) ? (string) $portVal : '8000';
         
-        $publicDir = getcwd() . '/public';
-
-        if (!file_exists($publicDir)) {
-            echo "\033[31mError:\033[0m Public directory not found: {$publicDir}\n";
-            return 1;
-        }
-
         $this->displayAscii();
 
         $usePhpServer = in_array('--php', $args, true) || in_array('--driver=php', $args, true);
-
         if ($usePhpServer) {
+            $publicDir = getcwd() . '/public';
+
+            if (!file_exists($publicDir)) {
+                echo "\033[31mError:\033[0m Public directory not found: {$publicDir}\n";
+                return 1;
+            }
+
             echo "\033[32mStarting PHP built-in development server on http://{$host}:{$port}\033[0m\n";
             echo "Document root: {$publicDir}\n";
             echo "Press Ctrl+C to stop.\n\n";
