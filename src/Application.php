@@ -60,7 +60,7 @@ final class Application
             ConsoleKernel::class => fn(ContainerInterface $c) => new ConsoleKernel($c, $commands),
             self::class => $this,
             ResponseFactoryInterface::class => function (ContainerInterface $c) {
-                return new \Slim\Http\Factory\DecoratedResponseFactory(
+                return new \Stout\Http\Factory\DecoratedResponseFactory(
                     new \Slim\Psr7\Factory\ResponseFactory(),
                     new \Slim\Psr7\Factory\StreamFactory()
                 );
@@ -137,17 +137,17 @@ final class Application
     /**
      * Run in FPM/CGI mode.
      */
-    public function run(): void
+    public function runCgi(): void
     {
-        $this->http()->bootstrap()->run();
+        $this->http()->bootstrap()->runCgi();
     }
 
     /**
-     * Run in RoadRunner HTTP worker daemon mode.
+     * Run in RoadRunner HTTP worker daemon mode (default).
      */
-    public function runRoadRunner(): void
+    public function run(): void
     {
-        $this->http()->bootstrap()->runRoadRunner();
+        $this->http()->bootstrap()->run();
     }
 
     /**

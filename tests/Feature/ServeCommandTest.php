@@ -30,11 +30,7 @@ namespace Stout\Tests\Feature {
         $dummyRrContent = <<<'PHP'
 <?php
 $args = $_SERVER['argv'];
-if (in_array('make-config', $args, true)) {
-    $dirIndex = array_search('-l', $args, true);
-    $dir = $dirIndex !== false ? $args[$dirIndex + 1] : getcwd();
-    file_put_contents($dir . '/.rr.yaml', "server:\n  command: \"php worker.php\"\n");
-} elseif (in_array('get-binary', $args, true)) {
+if (in_array('get-binary', $args, true)) {
     $dirIndex = array_search('-l', $args, true);
     $dir = $dirIndex !== false ? $args[$dirIndex + 1] : getcwd() . '/bin/';
     @mkdir($dir, 0755, true);
@@ -61,12 +57,12 @@ PHP;
             // Check that passthru was called with the correct command
             $binName = PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr';
             expect($GLOBALS['last_executed_command'])->toContain("bin/{$binName}");
-            expect($GLOBALS['last_executed_command'])->toContain(".rr.yaml");
+            expect($GLOBALS['last_executed_command'])->toContain("rr.yaml");
         } finally {
             // Clean up
             @unlink($tempDir . '/bin/' . (PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr'));
             @rmdir($tempDir . '/bin');
-            @unlink($tempDir . '/.rr.yaml');
+            @unlink($tempDir . '/rr.yaml');
             @unlink($dummyRr);
             @rmdir($tempDir . '/vendor/bin');
             @rmdir($tempDir . '/vendor');
@@ -86,8 +82,8 @@ PHP;
         $tempDir = sys_get_temp_dir() . '/stout_serve_exist_test_' . uniqid();
         @mkdir($tempDir, 0755, true);
 
-        // Pre-create .rr.yaml
-        file_put_contents($tempDir . '/.rr.yaml', "server:\n  command: \"php app.php\"\n");
+        // Pre-create rr.yaml
+        file_put_contents($tempDir . '/rr.yaml', "server:\n  command: \"php app.php\"\n");
 
         // Pre-create bin/rr
         @mkdir($tempDir . '/bin', 0755, true);
@@ -111,7 +107,7 @@ PHP;
         } finally {
             @unlink($tempDir . '/bin/' . (PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr'));
             @rmdir($tempDir . '/bin');
-            @unlink($tempDir . '/.rr.yaml');
+            @unlink($tempDir . '/rr.yaml');
             @rmdir($tempDir . '/public');
             @rmdir($tempDir);
             if (is_string($originalCwd)) {
@@ -133,21 +129,6 @@ PHP;
         $binName = PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr';
         file_put_contents($tempDir . '/bin/' . $binName, "dummy binary");
 
-        // Create dummy vendor/bin/rr for scaffolding config
-        @mkdir($tempDir . '/vendor/bin', 0755, true);
-        $dummyRr = $tempDir . '/vendor/bin/rr';
-        $dummyRrContent = <<<'PHP'
-<?php
-$args = $_SERVER['argv'];
-if (in_array('make-config', $args, true)) {
-    $dirIndex = array_search('-l', $args, true);
-    $dir = $dirIndex !== false ? $args[$dirIndex + 1] : getcwd();
-    file_put_contents($dir . '/.rr.yaml', "server:\n  command: \"php worker.php\"\n");
-}
-PHP;
-        file_put_contents($dummyRr, $dummyRrContent);
-        chmod($dummyRr, 0755);
-
         chdir($tempDir);
 
         try {
@@ -162,14 +143,11 @@ PHP;
             expect($outputContent)->toContain('Starting RoadRunner development server');
             expect($outputContent)->toContain('Scaffolding RoadRunner configuration');
             expect($outputContent)->not()->toContain('Downloading RoadRunner binary');
-            expect(file_exists($tempDir . '/.rr.yaml'))->toBeTrue();
+            expect(file_exists($tempDir . '/rr.yaml'))->toBeTrue();
         } finally {
             @unlink($tempDir . '/bin/' . (PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr'));
             @rmdir($tempDir . '/bin');
-            @unlink($tempDir . '/.rr.yaml');
-            @unlink($dummyRr);
-            @rmdir($tempDir . '/vendor/bin');
-            @rmdir($tempDir . '/vendor');
+            @unlink($tempDir . '/rr.yaml');
             @rmdir($tempDir . '/public');
             @rmdir($tempDir);
             if (is_string($originalCwd)) {
@@ -186,8 +164,8 @@ PHP;
         $tempDir = sys_get_temp_dir() . '/stout_serve_partial_bin_test_' . uniqid();
         @mkdir($tempDir, 0755, true);
 
-        // Pre-create .rr.yaml
-        file_put_contents($tempDir . '/.rr.yaml', "server:\n  command: \"php app.php\"\n");
+        // Pre-create rr.yaml
+        file_put_contents($tempDir . '/rr.yaml', "server:\n  command: \"php app.php\"\n");
 
         // Create dummy vendor/bin/rr for downloading binary
         @mkdir($tempDir . '/vendor/bin', 0755, true);
@@ -226,7 +204,7 @@ PHP;
         } finally {
             @unlink($tempDir . '/bin/' . (PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr'));
             @rmdir($tempDir . '/bin');
-            @unlink($tempDir . '/.rr.yaml');
+            @unlink($tempDir . '/rr.yaml');
             @unlink($dummyRr);
             @rmdir($tempDir . '/vendor/bin');
             @rmdir($tempDir . '/vendor');

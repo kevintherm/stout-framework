@@ -41,7 +41,7 @@ test('request lifecycle triggers before and after hooks in run', function () {
 
     ob_start();
     try {
-        $app->http()->run();
+        $app->http()->runCgi();
     } finally {
         ob_end_clean();
     }

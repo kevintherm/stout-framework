@@ -13,7 +13,7 @@ use Stout\Http\Middleware\ErrorMiddleware;
 use Stout\Http\RequestLifecycle;
 use Slim\App;
 use Slim\Factory\AppFactory;
-use Slim\Http\Factory\DecoratedResponseFactory;
+use Stout\Http\Factory\DecoratedResponseFactory;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\StreamFactory;
@@ -35,14 +35,19 @@ final class Kernel
     }
 
     /**
-     * Set up routes via a user-defined routing callback.
+     * Set up routes via a user-defined routing callback or direct Router instance.
      *
-     * @param callable(Router): void $callback
+     * @param Router|callable(Router): void $routes
      */
-    public function routes(callable $callback): self
+    public function routes(Router|callable $routes): self
     {
-        $router = new Router($this->app);
-        $callback($router);
+        if ($routes instanceof Router) {
+            $routes->registerToProxy($this->app);
+        } else {
+            $router = new Router();
+            $routes($router);
+            $router->registerToProxy($this->app);
+        }
         return $this;
     }
 
@@ -83,7 +88,7 @@ final class Kernel
     /**
      * Run in traditional FPM/CGI mode.
      */
-    public function run(): void
+    public function runCgi(): void
     {
         $lifecycle = $this->container->has(RequestLifecycle::class)
             ? $this->container->get(RequestLifecycle::class)
@@ -91,13 +96,14 @@ final class Kernel
         /** @var RequestLifecycle|null $lifecycle */
 
         $request = ServerRequestFactory::createFromGlobals();
+        $request = new \Stout\Http\Request($request);
 
         if ($lifecycle !== null) {
             foreach ($lifecycle->getBeforeCallbacks() as $callback) {
                 try {
                     $callback($request);
                 } catch (\Throwable $e) {
-                    // 
+                    //
                 }
             }
         }
@@ -134,9 +140,9 @@ final class Kernel
     }
 
     /**
-     * Run in RoadRunner daemon mode.
+     * Run in RoadRunner HTTP worker daemon mode (default).
      */
-    public function runRoadRunner(): void
+    public function run(): void
     {
         $worker = Worker::create();
         
@@ -157,6 +163,8 @@ final class Kernel
             : null;
 
         while ($request = $psr7Worker->waitRequest()) {
+            $request = new \Stout\Http\Request($request);
+
             if ($lifecycle !== null) {
                 foreach ($lifecycle->getBeforeCallbacks() as $callback) {
                     try {

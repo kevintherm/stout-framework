@@ -3,7 +3,7 @@
 /.pest/
 /coverage/
 
-# RoadRunner binary (downloaded by `stout rr:install`)
+# RoadRunner binary
 /bin/rr
 
 # Environment

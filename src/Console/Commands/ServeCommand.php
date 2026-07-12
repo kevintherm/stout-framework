@@ -62,7 +62,7 @@ final class ServeCommand extends Command
             return 1;
         }
 
-        $rrYaml = $cwd . '/.rr.yaml';
+        $rrYaml = $cwd . '/rr.yaml';
         $binDir = $cwd . '/bin';
         $binName = PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr';
         $rrBin = $binDir . '/' . $binName;
@@ -70,7 +70,64 @@ final class ServeCommand extends Command
         $needsYaml = !$this->checkFileExists($rrYaml);
         $needsBin = !$this->checkFileExists($rrBin);
 
-        if ($needsYaml || $needsBin) {
+        if ($needsYaml) {
+            echo "Scaffolding RoadRunner configuration...\n";
+            echo "Creating rr.yaml...\n";
+
+            $entryPoint = 'app.php';
+            if (PHP_SAPI === 'cli' && stream_isatty(STDIN)) {
+                echo "Where is the entry point file? [default: app.php]: ";
+                $input = fgets(STDIN);
+                if ($input !== false) {
+                    $input = trim($input);
+                    if ($input !== '') {
+                        $entryPoint = ltrim($input, '/');
+                    }
+                }
+            }
+
+            try {
+                $configYaml = [
+                    'version' => '3',
+                    'rpc' => [
+                        'listen' => 'tcp://127.0.0.1:6001',
+                    ],
+                    'server' => [
+                        'command' => 'php ' . $entryPoint,
+                        'relay' => 'pipes',
+                    ],
+                    'http' => [
+                        'address' => '0.0.0.0:8080',
+                        'middleware' => [
+                            'gzip',
+                            'static',
+                        ],
+                        'static' => [
+                            'dir' => 'public',
+                            'forbid' => [
+                                '.php',
+                                '.htaccess',
+                            ],
+                        ],
+                        'pool' => [
+                            'num_workers' => 0,
+                            'supervisor' => [
+                                'max_worker_memory' => 100,
+                            ],
+                            'debug' => true,
+                        ],
+                    ],
+                ];
+
+                $yamlContent = \Symfony\Component\Yaml\Yaml::dump($configYaml, 4);
+                file_put_contents($rrYaml, $yamlContent);
+            } catch (\Throwable $e) {
+                echo "\033[31mError writing rr.yaml: " . $e->getMessage() . "\033[0m\n";
+                return 1;
+            }
+        }
+
+        if ($needsBin) {
             $rrCliPath = $cwd . '/vendor/bin/rr';
             if (!$this->checkFileExists($rrCliPath)) {
                 echo "\033[31mError: RoadRunner CLI utility not found in vendor/bin/rr.\033[0m\n";
@@ -78,92 +135,33 @@ final class ServeCommand extends Command
                 return 1;
             }
 
-            if ($needsYaml) {
-                echo "Scaffolding RoadRunner configuration...\n";
-                echo "Creating .rr.yaml...\n";
-                $makeConfigCommand = sprintf(
-                    'php %s make-config -l %s',
-                    escapeshellarg($rrCliPath),
-                    escapeshellarg($cwd)
-                );
-
-                $resultCode = 0;
-                $output = [];
-                exec($makeConfigCommand, $output, $resultCode);
-
-                if ($resultCode !== 0 || !$this->checkFileExists($rrYaml)) {
-                    echo "\033[31mFailed to generate .rr.yaml using CLI utility.\033[0m\n";
-                    return 1;
-                }
-
-                $entryPoint = 'app.php';
-                if (PHP_SAPI === 'cli' && stream_isatty(STDIN)) {
-                    echo "Where is the entry point file? [default: app.php]: ";
-                    $input = fgets(STDIN);
-                    if ($input !== false) {
-                        $input = trim($input);
-                        if ($input !== '') {
-                            $entryPoint = ltrim($input, '/');
-                        }
-                    }
-                }
-
-                try {
-                    $configYaml = \Symfony\Component\Yaml\Yaml::parseFile($rrYaml);
-                    if (!is_array($configYaml)) {
-                        $configYaml = [];
-                    }
-                    
-                    $server = isset($configYaml['server']) && is_array($configYaml['server']) ? $configYaml['server'] : [];
-                    $server['command'] = 'php ' . $entryPoint;
-                    $configYaml['server'] = $server;
-
-                    $http = isset($configYaml['http']) && is_array($configYaml['http']) ? $configYaml['http'] : [];
-                    $pool = isset($http['pool']) && is_array($http['pool']) ? $http['pool'] : [];
-                    
-                    $pool['debug'] = true;
-                    $pool['num_workers'] = 0;
-                    
-                    $http['pool'] = $pool;
-                    $configYaml['http'] = $http;
-
-                    $yamlContent = \Symfony\Component\Yaml\Yaml::dump($configYaml, 4);
-                    file_put_contents($rrYaml, $yamlContent);
-                } catch (\Throwable $e) {
-                    echo "\033[31mError updating .rr.yaml: " . $e->getMessage() . "\033[0m\n";
-                    return 1;
-                }
+            if (!is_dir($binDir)) {
+                mkdir($binDir, 0755, true);
             }
 
-            if ($needsBin) {
-                if (!is_dir($binDir)) {
-                    mkdir($binDir, 0755, true);
-                }
+            echo "Downloading RoadRunner binary via CLI utility...\n";
 
-                echo "Downloading RoadRunner binary via CLI utility...\n";
-                
-                $command = sprintf(
-                    'php %s get-binary -l %s --no-config --silent --no-interaction',
-                    escapeshellarg($rrCliPath),
-                    escapeshellarg($binDir . '/')
-                );
+            $command = sprintf(
+                'php %s get-binary -l %s --no-config --silent --no-interaction',
+                escapeshellarg($rrCliPath),
+                escapeshellarg($binDir . '/')
+            );
 
-                $resultCode = 0;
-                $output = [];
-                exec($command, $output, $resultCode);
+            $resultCode = 0;
+            $output = [];
+            exec($command, $output, $resultCode);
 
-                if ($resultCode !== 0) {
-                    echo "\033[31mFailed to install RoadRunner binary using CLI utility. Exit code: {$resultCode}\033[0m\n";
-                    return 1;
-                }
+            if ($resultCode !== 0) {
+                echo "\033[31mFailed to install RoadRunner binary using CLI utility. Exit code: {$resultCode}\033[0m\n";
+                return 1;
+            }
 
-                if ($this->checkFileExists($rrBin)) {
-                    chmod($rrBin, 0755);
-                    echo "\033[32mSuccessfully installed RoadRunner binary to: {$rrBin}\033[0m\n";
-                } else {
-                    echo "\033[31mInstallation failed: rr binary not found at {$rrBin}\033[0m\n";
-                    return 1;
-                }
+            if ($this->checkFileExists($rrBin)) {
+                chmod($rrBin, 0755);
+                echo "\033[32mSuccessfully installed RoadRunner binary to: {$rrBin}\033[0m\n";
+            } else {
+                echo "\033[31mInstallation failed: rr binary not found at {$rrBin}\033[0m\n";
+                return 1;
             }
         } else {
             chmod($rrBin, 0755);
