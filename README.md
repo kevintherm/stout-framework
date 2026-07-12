@@ -59,7 +59,6 @@ A wrapper around the Slim 4 App instance:
 A custom, lightweight console implementation:
 - **`ListCommand`**: Displays the application ASCII banner with version parsed from `composer.json`, and lists all registered commands.
 - **`ServeCommand`**: Starts the RoadRunner application server by default. Automatically triggers binary download and scaffolding if not present. Falls back to the PHP built-in server via `./vendor/bin/stout serve --php`.
-- **`RoadRunnerCommand` (`rr:install`)**: Handles downloading the correct OS-specific RoadRunner binary and scaffolding `.rr.yaml` and `worker.php` files into the project.
 
 ### 6. `Stout\Log\Logger`
 A timezone-aware PSR-3 compliant file logger:

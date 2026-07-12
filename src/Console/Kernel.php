@@ -7,7 +7,6 @@ namespace Stout\Console;
 use Psr\Container\ContainerInterface;
 use Stout\Console\Command;
 use Stout\Console\Commands\ListCommand;
-use Stout\Console\Commands\RoadRunnerCommand;
 use Stout\Console\Commands\ServeCommand;
 use Stout\Exceptions\StoutException;
 
@@ -27,7 +26,6 @@ final class Kernel
         $builtIns = [
             ListCommand::class,
             ServeCommand::class,
-            RoadRunnerCommand::class,
         ];
 
         foreach (array_merge($builtIns, $commandClasses) as $class) {
