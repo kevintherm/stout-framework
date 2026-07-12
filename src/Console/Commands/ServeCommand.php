@@ -97,7 +97,7 @@ final class ServeCommand extends Command
                         'relay' => 'pipes',
                     ],
                     'http' => [
-                        'address' => '0.0.0.0:8080',
+                        'address' => '0.0.0.0:8000',
                         'middleware' => [
                             'gzip',
                             'static',
