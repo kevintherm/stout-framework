@@ -8,18 +8,20 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use Stout\Config\Config;
-use Stout\Http\Middleware\ErrorMiddleware;
-use Stout\Http\RequestLifecycle;
 use Slim\App;
 use Slim\Factory\AppFactory;
-use Stout\Http\Factory\DecoratedResponseFactory;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Factory\UploadedFileFactory;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
+use Stout\Config\Config;
+use Stout\Http\Factory\DecoratedResponseFactory;
+use Stout\Http\Middleware\ErrorMiddleware;
+use Stout\Http\Request;
+use Stout\Http\RequestLifecycle;
+use Stout\Http\Strategies\RouteInvocationStrategy;
 
 final class Kernel
 {
@@ -32,6 +34,9 @@ final class Kernel
             new DecoratedResponseFactory(new ResponseFactory(), new StreamFactory())
         );
         $this->app = AppFactory::createFromContainer($this->container);
+        $this->app->getRouteCollector()->setDefaultInvocationStrategy(
+            new RouteInvocationStrategy()
+        );
     }
 
     /**
@@ -96,7 +101,7 @@ final class Kernel
         /** @var RequestLifecycle|null $lifecycle */
 
         $request = ServerRequestFactory::createFromGlobals();
-        $request = new \Stout\Http\Request($request);
+        $request = new Request($request);
 
         if ($lifecycle !== null) {
             foreach ($lifecycle->getBeforeCallbacks() as $callback) {
@@ -145,7 +150,7 @@ final class Kernel
     public function run(): void
     {
         $worker = Worker::create();
-        
+
         $serverRequestFactory = new ServerRequestFactory();
         $streamFactory = new StreamFactory();
         $uploadsFactory = new UploadedFileFactory();
