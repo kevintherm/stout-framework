@@ -106,26 +106,10 @@ final class ServeCommand extends Command
             getcwd() . '/vendor/stout/stout/ascii.txt',
         ];
 
-        $composerJsonPath = __DIR__ . '/../../../composer.json';
-        $version = 'version unknown';
-        if (file_exists($composerJsonPath)) {
-            $rawJson = file_get_contents($composerJsonPath);
-            if (is_string($rawJson)) {
-                $composerData = json_decode($rawJson, true);
-                if (is_array($composerData) && isset($composerData['version']) && is_string($composerData['version'])) {
-                    $version = "v{$composerData['version']}";
-                }
-            }
-        }
-
         foreach ($possiblePaths as $path) {
             if (file_exists($path)) {
                 $content = file_get_contents($path);
                 if (is_string($content)) {
-                    $content = strtr($content, [
-                        '[#version]' => $version,
-                    ]);
-
                     echo $content . PHP_EOL;
                     break;
                 }
