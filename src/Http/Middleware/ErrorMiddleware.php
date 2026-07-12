@@ -28,7 +28,14 @@ final readonly class ErrorMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         } catch (Throwable $exception) {
             if ($this->logErrors) {
-                $this->logger->error($exception->getMessage(), ['exception' => $exception]);
+                $this->logger->error(sprintf(
+                    '%s %s: %s',
+                    $request->getMethod(),
+                    $request->getUri()->getPath(),
+                    $exception->getMessage()
+                ), [
+                    'exception' => $exception,
+                ]);
             }
 
             $response = $this->responseFactory->createResponse(500)

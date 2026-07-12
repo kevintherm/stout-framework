@@ -73,14 +73,14 @@ final class Kernel
         $logger = $this->container->get(\Psr\Log\LoggerInterface::class);
         /** @var \Psr\Log\LoggerInterface $logger */
 
+        $this->app->addRoutingMiddleware();
+
         $this->app->add(new ErrorMiddleware(
             responseFactory: new DecoratedResponseFactory(new ResponseFactory(), new StreamFactory()),
             logger: $logger,
             displayErrorDetails: $debug,
             logErrors: true
         ));
-
-        $this->app->addRoutingMiddleware();
 
         return $this;
     }
