@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Stout\Config\Config;
 use Stout\Http\Middleware\ErrorMiddleware;
+use Stout\Http\RequestLifecycle;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Slim\Http\Factory\DecoratedResponseFactory;
@@ -84,7 +85,44 @@ final class Kernel
      */
     public function run(): void
     {
-        $this->app->run();
+        $lifecycle = $this->container->has(RequestLifecycle::class)
+            ? $this->container->get(RequestLifecycle::class)
+            : null;
+        /** @var RequestLifecycle|null $lifecycle */
+
+        $request = ServerRequestFactory::createFromGlobals();
+
+        if ($lifecycle !== null) {
+            foreach ($lifecycle->getBeforeCallbacks() as $callback) {
+                try {
+                    $callback($request);
+                } catch (\Throwable $e) {
+                    // 
+                }
+            }
+        }
+
+        $response = null;
+        $exception = null;
+
+        try {
+            $response = $this->handle($request);
+            $emitter = new \Slim\ResponseEmitter();
+            $emitter->emit($response);
+        } catch (\Throwable $e) {
+            $exception = $e;
+            throw $e;
+        } finally {
+            if ($lifecycle !== null) {
+                foreach ($lifecycle->getAfterCallbacks() as $callback) {
+                    try {
+                        $callback($response, $exception);
+                    } catch (\Throwable $e) {
+                        //
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -113,12 +151,41 @@ final class Kernel
             $uploadsFactory
         );
 
+        /** @var RequestLifecycle|null $lifecycle */
+        $lifecycle = $this->container->has(RequestLifecycle::class)
+            ? $this->container->get(RequestLifecycle::class)
+            : null;
+
         while ($request = $psr7Worker->waitRequest()) {
+            if ($lifecycle !== null) {
+                foreach ($lifecycle->getBeforeCallbacks() as $callback) {
+                    try {
+                        $callback($request);
+                    } catch (\Throwable $e) {
+                        //
+                    }
+                }
+            }
+
+            $response = null;
+            $exception = null;
+
             try {
                 $response = $this->app->handle($request);
                 $psr7Worker->respond($response);
             } catch (\Throwable $e) {
+                $exception = $e;
                 $worker->error((string) $e);
+            } finally {
+                if ($lifecycle !== null) {
+                    foreach ($lifecycle->getAfterCallbacks() as $callback) {
+                        try {
+                            $callback($response, $exception);
+                        } catch (\Throwable $e) {
+                            // 
+                        }
+                    }
+                }
             }
         }
     }

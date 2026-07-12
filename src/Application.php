@@ -13,6 +13,7 @@ use Stout\Console\Command;
 use Stout\Console\Kernel as ConsoleKernel;
 use Stout\Container\ContainerFactory;
 use Stout\Http\Kernel as HttpKernel;
+use Stout\Http\RequestLifecycle;
 use Stout\Log\Logger;
 use Stout\Support\ServiceProvider;
 
@@ -76,6 +77,7 @@ final class Application
 
                 return new Logger($logPath, $timezone);
             },
+            RequestLifecycle::class => fn(ContainerInterface $c) => new RequestLifecycle(),
         ];
 
         $this->container = ContainerFactory::build($config, $providers, $definitions);
