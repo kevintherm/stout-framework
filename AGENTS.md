@@ -17,9 +17,15 @@ This guide is optimized for LLM agents working on applications built using the S
 ## 2. Framework Architecture & Entry Points
 
 - **`Stout\Application`**: The central coordinator managing config loading, DI compiling, CLI executions, and HTTP dispatching.
-- **`bootstrap/app.php`**: The application wiring script returning the booted `Application` instance.
-- **`bin/stout`**: Executable that loads the bootstrap file and routes arguments to the CLI Kernel.
-- **`worker.php` / `.rr.yaml`**: Configured to boot the application server using Spiral RoadRunner.
+- **User-defined entrypoint** (e.g. `app.php`): The application wiring script that instantiates `Application`, registers providers/commands/routes, and then runs in the appropriate mode based on `PHP_SAPI`:
+  ```php
+  if (PHP_SAPI === 'cli') {
+      exit($app->runCli($argv));
+  }
+  $app->run(); // RoadRunner HTTP worker
+  ```
+- **There is no `bin/stout` binary.** CLI commands are invoked directly via `php app.php <command>`.
+- **`rr.yaml`**: RoadRunner config points `server.command` to the same entrypoint (`php app.php`).
 
 ---
 
@@ -53,7 +59,7 @@ final class UserController
 ```
 
 ### Recipe B: Creating Custom Console Commands
-Create a command class extending `Stout\Console\Command`. You can constructor-inject any services. Register it in the `commands` array inside `bootstrap/app.php`:
+Create a command class extending `Stout\Console\Command`. You can constructor-inject any services. Register it in the `commands` array when constructing `Application` in your entrypoint:
 
 ```php
 namespace App\Commands;
@@ -81,7 +87,7 @@ final class GreetCommand extends Command
 ```
 
 ### Recipe C: Registering Service Providers
-Service providers must extend `Stout\Support\ServiceProvider`. Register the provider in the `providers` array inside `bootstrap/app.php`:
+Service providers must extend `Stout\Support\ServiceProvider`. Register the provider in the `providers` array when constructing `Application` in your entrypoint:
 
 ```php
 namespace App\Providers;

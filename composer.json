@@ -43,9 +43,6 @@
             "Stout\\Tests\\": "tests/"
         }
     },
-    "bin": [
-        "bin/stout"
-    ],
     "scripts": {
         "test": "pest --colors=always",
         "test:coverage": "pest --coverage --colors=always",

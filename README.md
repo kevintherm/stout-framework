@@ -11,18 +11,81 @@ Stout enforces strict type safety (PHPStan Level 10), explicit constructor-based
 ### Architectural Blueprint
 
 ```text
-  [ bin/stout or worker.php ]
+  [ app.php (user-defined entrypoint) ]
                │
-               ▼
-      [ bootstrap/app.php ]
+               ├── PHP_SAPI === 'cli'  ──► runCli($argv)
                │
-               ▼
-     [ Stout\Application ]
-      ├───► [ Stout\Config\Config ]
-      ├───► [ Stout\Container\ContainerFactory ] ───► [ PHP-DI Container ]
-      ├───► [ Stout\Http\Kernel ]
-      └───► [ Stout\Console\Kernel ]
+               └── HTTP worker mode   ──► run()
+                          │
+                          ▼
+               [ Stout\Application ]
+                ├───► [ Stout\Config\Config ]
+                ├───► [ Stout\Container\ContainerFactory ] ───► [ PHP-DI Container ]
+                ├───► [ Stout\Http\Kernel ]
+                └───► [ Stout\Console\Kernel ]
 ```
+
+---
+
+## Getting Started
+
+There is no CLI binary. Instead, your entrypoint file (e.g. `app.php`) is responsible for booting the application and deciding how to run based on the PHP SAPI:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/vendor/autoload.php';
+
+use App\Providers\AppServiceProvider;
+use App\Commands\MigrateCommand;
+use Stout\Application;
+
+$app = new Application(
+    basePath: __DIR__,
+    providers: [AppServiceProvider::class],
+    commands: [MigrateCommand::class],
+);
+
+// Register routes
+$app->http()->router(function(Router $router) {
+
+  $router->get('/', HomeHandler::class);
+
+});
+
+// Or use a Router instances
+
+$router = new Router();
+
+$router2 = new Router();
+
+$router->mount('/api/user', $router2);
+$app->http()->router($router);
+
+// Dual-mode entrypoint: CLI or RoadRunner HTTP worker
+if (PHP_SAPI === 'cli') {
+    exit($app->runCli($argv));
+}
+
+$app->run();
+```
+
+**Run CLI commands:**
+```bash
+php app.php list
+php app.php serve
+php app.php other-commands
+```
+
+**RoadRunner `rr.yaml` points directly to the same file:**
+```yaml
+server:
+  command: "php app.php"
+```
+
+This means there is a single, user-controlled entrypoint for both HTTP and CLI — no binary to configure, no path discovery, no magic.
 
 ---
 
@@ -58,7 +121,7 @@ A wrapper around the Slim 4 App instance:
 ### 5. `Stout\Console\Kernel` & Commands
 A custom, lightweight console implementation:
 - **`ListCommand`**: Displays the application ASCII banner with version parsed from `composer.json`, and lists all registered commands.
-- **`ServeCommand`**: Starts the RoadRunner application server by default. Automatically triggers binary download and scaffolding if not present. Falls back to the PHP built-in server via `./vendor/bin/stout serve --php`.
+- **`ServeCommand`**: Starts the RoadRunner application server by default. Automatically triggers binary download and scaffolding if not present. Falls back to the PHP built-in server via `php app.php serve --php`.
 
 ### 6. `Stout\Log\Logger`
 A timezone-aware PSR-3 compliant file logger:
