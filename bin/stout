@@ -3,9 +3,23 @@
 
 declare(strict_types=1);
 
-$cwd = getcwd();
+$basePath = null;
 
-$projectAutoloader = $cwd . '/vendor/autoload.php';
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    $basePath = dirname(__DIR__);
+} elseif (file_exists(__DIR__ . '/../../../../vendor/autoload.php')) {
+    $basePath = dirname(__DIR__, 4);
+} elseif (file_exists(__DIR__ . '/../../vendor/autoload.php')) {
+    $basePath = dirname(__DIR__, 2);
+} else {
+    $basePath = getcwd();
+}
+
+if ($basePath !== false && is_dir($basePath)) {
+    chdir($basePath);
+}
+
+$projectAutoloader = $basePath . '/vendor/autoload.php';
 $frameworkAutoloader = __DIR__ . '/../vendor/autoload.php';
 
 if (file_exists($projectAutoloader)) {
@@ -19,14 +33,15 @@ if (file_exists($projectAutoloader)) {
 
 use Stout\Application;
 
-$bootstrapFile = $cwd . '/bootstrap/app.php';
+$bootstrapFile = $basePath . '/bootstrap/app.php';
 if (file_exists($bootstrapFile)) {
     /** @var Application $app */
     $app = require $bootstrapFile;
 } else {
-    $app = new Application($cwd);
+    $app = new Application($basePath);
 }
 
 $exitCode = $app->runCli($argv);
 
 exit($exitCode);
+

@@ -75,7 +75,10 @@ final class ServeCommand extends Command
             echo "Creating rr.yaml...\n";
 
             $entryPoint = 'app.php';
-            if (PHP_SAPI === 'cli' && stream_isatty(STDIN)) {
+            $isTesting = class_exists(\PHPUnit\Framework\TestCase::class) || defined('PHPUNIT_COMPOSER_INSTALL');
+            $noInteraction = in_array('--no-interaction', $args, true) || in_array('-n', $args, true);
+
+            if (PHP_SAPI === 'cli' && stream_isatty(STDIN) && !$isTesting && !$noInteraction) {
                 echo "Where is the entry point file? [default: app.php]: ";
                 $input = fgets(STDIN);
                 if ($input !== false) {
