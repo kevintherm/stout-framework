@@ -9,11 +9,13 @@ use Stout\Console\Command;
 use Stout\Console\Commands\ListCommand;
 use Stout\Console\Commands\ServeCommand;
 use Stout\Exceptions\StoutException;
+use Symfony\Component\Console\Application as SymfonyApplication;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 final class Kernel
 {
-    /** @var array<string, Command> */
-    private array $commands = [];
+    private SymfonyApplication $cliApp;
 
     /**
      * @param ContainerInterface $container
@@ -23,6 +25,9 @@ final class Kernel
         private readonly ContainerInterface $container,
         array $commandClasses = []
     ) {
+        $version = $this->resolveVersion();
+        $this->cliApp = new SymfonyApplication('Stout', $version);
+
         $builtIns = [
             ListCommand::class,
             ServeCommand::class,
@@ -45,7 +50,7 @@ final class Kernel
         }
 
         $command = new $class($this->container);
-        $this->commands[$command->name()] = $command;
+        $this->cliApp->addCommand($command);
     }
 
     /**
@@ -55,7 +60,14 @@ final class Kernel
      */
     public function getCommands(): array
     {
-        return $this->commands;
+        $commands = [];
+        foreach ($this->cliApp->all() as $name => $command) {
+            if ($command instanceof Command) {
+                $commands[$name] = $command;
+            }
+        }
+        /** @var array<string, Command> $commands */
+        return $commands;
     }
 
     /**
@@ -66,21 +78,56 @@ final class Kernel
      */
     public function handle(array $argv): int
     {
-        $commandName = $argv[1] ?? 'list';
-        $args = array_slice($argv, 2);
-
-        if (!isset($this->commands[$commandName])) {
-            echo "\033[31mUnknown command: \"{$commandName}\"\033[0m\n\n";
-            $commandName = 'list';
-            $args = [];
-        }
+        $input = new ArgvInput(array_values($argv));
+        $output = new ConsoleOutput();
 
         try {
-            return $this->commands[$commandName]->execute($args);
+            $this->cliApp->setAutoExit(false);
+            return $this->cliApp->run($input, $output);
         } catch (\Throwable $e) {
-            echo "\033[31mFatal Command Error: " . $e->getMessage() . "\033[0m\n";
-            echo $e->getTraceAsString() . PHP_EOL;
+            $output->writeln("<error>Fatal Command Error: " . $e->getMessage() . "</error>");
+            $output->writeln($e->getTraceAsString());
             return 1;
         }
     }
+
+    /**
+     * Resolve the application version from the git tag or Composer metadata.
+     */
+    private function resolveVersion(): string
+    {
+        $version = null;
+
+        try {
+            /** @var \Stout\Config\Config $config */
+            $config = $this->container->get(\Stout\Config\Config::class);
+            $basePath = $config->get('paths.base');
+            if (is_string($basePath) && is_dir($basePath . '/.git') && function_exists('exec')) {
+                $output = [];
+                $resultCode = 0;
+                @exec('git describe --tags --always', $output, $resultCode);
+                if ($resultCode === 0 && isset($output[0])) {
+                    $version = trim($output[0]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore config/exec resolution issues
+        }
+
+        if ($version === null && class_exists(\Composer\InstalledVersions::class)) {
+            try {
+                $version = \Composer\InstalledVersions::getPrettyVersion('stout/stout');
+            } catch (\OutOfBoundsException $e) {
+                try {
+                    $root = \Composer\InstalledVersions::getRootPackage();
+                    $version = $root['pretty_version'];
+                } catch (\Throwable $t) {
+                    // Ignore
+                }
+            }
+        }
+
+        return $version ?? '1.0.0';
+    }
 }
+

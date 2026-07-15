@@ -14,7 +14,6 @@ namespace Stout\Console\Commands {
 
 namespace Stout\Tests\Feature {
     use Stout\Console\Commands\ServeCommand;
-    use Stout\Tests\bootTestApp;
 
     test('serve command checks roadrunner setup and calls passthru with serve command', function () {
         $GLOBALS['last_executed_command'] = null;
@@ -47,9 +46,10 @@ PHP;
             $app = \Stout\Tests\bootTestApp();
             $command = new ServeCommand($app->getContainer());
 
-            ob_start();
-            $exitCode = $command->execute([]);
-            $outputContent = ob_get_clean();
+            $input = new \Symfony\Component\Console\Input\ArrayInput([]);
+            $output = new \Symfony\Component\Console\Output\BufferedOutput();
+            $exitCode = $command->run($input, $output);
+            $outputContent = $output->fetch();
 
             expect($exitCode)->toBe(0);
             expect($outputContent)->toContain('Starting RoadRunner development server');
@@ -96,9 +96,10 @@ PHP;
             $app = \Stout\Tests\bootTestApp();
             $command = new ServeCommand($app->getContainer());
 
-            ob_start();
-            $exitCode = $command->execute([]);
-            $outputContent = ob_get_clean();
+            $input = new \Symfony\Component\Console\Input\ArrayInput([]);
+            $output = new \Symfony\Component\Console\Output\BufferedOutput();
+            $exitCode = $command->run($input, $output);
+            $outputContent = $output->fetch();
 
             expect($exitCode)->toBe(0);
             expect($outputContent)->toContain('Starting RoadRunner development server');
@@ -135,9 +136,10 @@ PHP;
             $app = \Stout\Tests\bootTestApp();
             $command = new ServeCommand($app->getContainer());
 
-            ob_start();
-            $exitCode = $command->execute([]);
-            $outputContent = ob_get_clean();
+            $input = new \Symfony\Component\Console\Input\ArrayInput([]);
+            $output = new \Symfony\Component\Console\Output\BufferedOutput();
+            $exitCode = $command->run($input, $output);
+            $outputContent = $output->fetch();
 
             expect($exitCode)->toBe(0);
             expect($outputContent)->toContain('Starting RoadRunner development server');
@@ -190,9 +192,10 @@ PHP;
             $app = \Stout\Tests\bootTestApp();
             $command = new ServeCommand($app->getContainer());
 
-            ob_start();
-            $exitCode = $command->execute([]);
-            $outputContent = ob_get_clean();
+            $input = new \Symfony\Component\Console\Input\ArrayInput([]);
+            $output = new \Symfony\Component\Console\Output\BufferedOutput();
+            $exitCode = $command->run($input, $output);
+            $outputContent = $output->fetch();
 
             expect($exitCode)->toBe(0);
             expect($outputContent)->toContain('Starting RoadRunner development server');
@@ -230,9 +233,10 @@ PHP;
             $app = \Stout\Tests\bootTestApp();
             $command = new ServeCommand($app->getContainer());
 
-            ob_start();
-            $exitCode = $command->execute(['--php']);
-            $outputContent = ob_get_clean();
+            $input = new \Symfony\Component\Console\Input\ArrayInput(['--php' => true]);
+            $output = new \Symfony\Component\Console\Output\BufferedOutput();
+            $exitCode = $command->run($input, $output);
+            $outputContent = $output->fetch();
 
             expect($exitCode)->toBe(0);
             expect($outputContent)->toContain('Starting PHP built-in development server');
@@ -270,9 +274,10 @@ PHP;
             $app = \Stout\Tests\bootTestApp();
             $command = new ServeCommand($app->getContainer());
 
-            ob_start();
-            $exitCode = $command->execute([]);
-            $outputContent = ob_get_clean();
+            $input = new \Symfony\Component\Console\Input\ArrayInput([]);
+            $output = new \Symfony\Component\Console\Output\BufferedOutput();
+            $exitCode = $command->run($input, $output);
+            $outputContent = $output->fetch();
 
             expect($exitCode)->toBe(0);
             expect($outputContent)->toContain('Starting RoadRunner development server on http://0.0.0.0:8001');
@@ -313,9 +318,10 @@ PHP;
             $app = \Stout\Tests\bootTestApp();
             $command = new ServeCommand($app->getContainer());
 
-            ob_start();
-            $exitCode = $command->execute(['--host=127.0.0.1', '--port=9000']);
-            $outputContent = ob_get_clean();
+            $input = new \Symfony\Component\Console\Input\ArrayInput(['--host' => '127.0.0.1', '--port' => '9000']);
+            $output = new \Symfony\Component\Console\Output\BufferedOutput();
+            $exitCode = $command->run($input, $output);
+            $outputContent = $output->fetch();
 
             expect($exitCode)->toBe(0);
             expect($outputContent)->toContain('Starting RoadRunner development server on http://127.0.0.1:9000');

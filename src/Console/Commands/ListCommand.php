@@ -6,6 +6,8 @@ namespace Stout\Console\Commands;
 
 use Stout\Console\Command;
 use Stout\Console\Kernel as ConsoleKernel;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 final class ListCommand extends Command
 {
@@ -19,12 +21,12 @@ final class ListCommand extends Command
         return 'List all available commands';
     }
 
-    public function execute(array $args): int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->displayAscii();
+        $this->displayAscii($output);
 
-        echo "Available commands:\n";
-        echo "-------------------\n";
+        $output->writeln("Available commands:");
+        $output->writeln("-------------------");
 
         /** @var ConsoleKernel $kernel */
         $kernel = $this->container->get(ConsoleKernel::class);
@@ -37,14 +39,14 @@ final class ListCommand extends Command
 
         foreach ($commands as $cmd) {
             $paddedName = str_pad($cmd->name(), $maxLength + 2, ' ');
-            echo "  \033[32m{$paddedName}\033[0m {$cmd->description()}\n";
+            $output->writeln("  <info>{$paddedName}</info> {$cmd->description()}");
         }
 
-        echo PHP_EOL;
+        $output->writeln('');
         return 0;
     }
 
-    private function displayAscii(): void
+    private function displayAscii(OutputInterface $output): void
     {
         $possiblePaths = [
             __DIR__ . '/../../../ascii.txt',
@@ -56,10 +58,11 @@ final class ListCommand extends Command
             if (file_exists($path)) {
                 $content = file_get_contents($path);
                 if (is_string($content)) {
-                    echo $content . PHP_EOL;
+                    $output->writeln($content);
                     break;
                 }
             }
         }
     }
 }
+

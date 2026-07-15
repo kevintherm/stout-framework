@@ -5,10 +5,17 @@ declare(strict_types=1);
 namespace Stout\Console;
 
 use Psr\Container\ContainerInterface;
+use Symfony\Component\Console\Command\Command as SymfonyCommand;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-abstract class Command
+abstract class Command extends SymfonyCommand
 {
-    public function __construct(protected readonly ContainerInterface $container) {}
+    public function __construct(protected readonly ContainerInterface $container)
+    {
+        parent::__construct($this->name());
+        $this->setDescription($this->description());
+    }
 
     /**
      * Get the name of the command (e.g. 'serve', 'rr:install').
@@ -23,8 +30,13 @@ abstract class Command
     /**
      * Execute the command.
      *
-     * @param array<int, string> $args Positional arguments passed to the CLI command (excluding command name).
+     * @param InputInterface $input
+     * @param OutputInterface $output
      * @return int Exit code (0 for success, non-zero for failure).
      */
-    abstract public function execute(array $args): int;
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        return self::SUCCESS;
+    }
 }
+

@@ -6,6 +6,8 @@ namespace Stout\Console\Commands;
 
 use Stout\Config\Config;
 use Stout\Console\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 final class ServeCommand extends Command
 {
@@ -19,20 +21,24 @@ final class ServeCommand extends Command
         return 'Start the development server (RoadRunner by default, PHP built-in server with --php)';
     }
 
-    public function execute(array $args): int
+    protected function configure(): void
+    {
+        $this
+            ->addOption('host', null, \Symfony\Component\Console\Input\InputOption::VALUE_OPTIONAL, 'The host to serve the application on.')
+            ->addOption('port', null, \Symfony\Component\Console\Input\InputOption::VALUE_OPTIONAL, 'The port to serve the application on.')
+            ->addOption('php', null, \Symfony\Component\Console\Input\InputOption::VALUE_NONE, 'Use the PHP built-in development server.')
+            ->addOption('driver', null, \Symfony\Component\Console\Input\InputOption::VALUE_OPTIONAL, 'The driver to use (e.g. php).');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $config = $this->container->get(Config::class);
         /** @var Config $config */
 
-        $cliHost = null;
-        $cliPort = null;
-        foreach ($args as $arg) {
-            if (str_starts_with($arg, '--host=')) {
-                $cliHost = substr($arg, 7);
-            } elseif (str_starts_with($arg, '--port=')) {
-                $cliPort = substr($arg, 7);
-            }
-        }
+        /** @var string|null $cliHost */
+        $cliHost = $input->getOption('host');
+        /** @var string|null $cliPort */
+        $cliPort = $input->getOption('port');
 
         $hostVal = $config->get('app.host', '127.0.0.1');
         $portVal = $config->get('app.port', '8000');
@@ -41,21 +47,22 @@ final class ServeCommand extends Command
 
         $hasCliAddress = $cliHost !== null || $cliPort !== null;
         
-        $this->displayAscii();
+        $this->displayAscii($output);
 
         $publicDir = getcwd() . '/public';
         if (!file_exists($publicDir)) {
             if (!mkdir($publicDir, 0755, true) && !is_dir($publicDir)) {
-                echo "\033[31mError:\033[0m Failed to create public directory: {$publicDir}\n";
+                $output->writeln("<error>Error: Failed to create public directory: {$publicDir}</error>");
                 return 1;
             }
         }
 
-        $usePhpServer = in_array('--php', $args, true) || in_array('--driver=php', $args, true);
+        $driver = $input->getOption('driver');
+        $usePhpServer = $input->getOption('php') === true || $driver === 'php';
         if ($usePhpServer) {
-            echo "\033[32mStarting PHP built-in development server on http://{$host}:{$port}\033[0m\n";
-            echo "Document root: {$publicDir}\n";
-            echo "Press Ctrl+C to stop.\n\n";
+            $output->writeln("<info>Starting PHP built-in development server on http://{$host}:{$port}</info>");
+            $output->writeln("Document root: {$publicDir}");
+            $output->writeln("Press Ctrl+C to stop.\n");
 
             $command = sprintf(
                 'php -S %s:%s -t %s',
@@ -70,7 +77,7 @@ final class ServeCommand extends Command
 
         $cwd = getcwd();
         if ($cwd === false) {
-            echo "\033[31mError: Could not get current working directory.\033[0m\n";
+            $output->writeln("<error>Error: Could not get current working directory.</error>");
             return 1;
         }
 
@@ -83,20 +90,20 @@ final class ServeCommand extends Command
         $needsBin = !$this->checkFileExists($rrBin);
 
         if ($needsYaml) {
-            echo "Scaffolding RoadRunner configuration...\n";
-            echo "Creating rr.yaml...\n";
+            $output->writeln("Scaffolding RoadRunner configuration...");
+            $output->writeln("Creating rr.yaml...");
 
             $entryPoint = 'app.php';
             $isTesting = class_exists(\PHPUnit\Framework\TestCase::class) || defined('PHPUNIT_COMPOSER_INSTALL');
-            $noInteraction = in_array('--no-interaction', $args, true) || in_array('-n', $args, true);
+            $noInteraction = !$input->isInteractive();
 
             if (PHP_SAPI === 'cli' && stream_isatty(STDIN) && !$isTesting && !$noInteraction) {
-                echo "Where is the entry point file? [default: app.php]: ";
-                $input = fgets(STDIN);
-                if ($input !== false) {
-                    $input = trim($input);
-                    if ($input !== '') {
-                        $entryPoint = ltrim($input, '/');
+                $output->write("Where is the entry point file? [default: app.php]: ");
+                $userInput = fgets(STDIN);
+                if ($userInput !== false) {
+                    $userInput = trim($userInput);
+                    if ($userInput !== '') {
+                        $entryPoint = ltrim($userInput, '/');
                     }
                 }
             }
@@ -137,7 +144,7 @@ final class ServeCommand extends Command
                 $yamlContent = \Symfony\Component\Yaml\Yaml::dump($configYaml, 4);
                 file_put_contents($rrYaml, $yamlContent);
             } catch (\Throwable $e) {
-                echo "\033[31mError writing rr.yaml: " . $e->getMessage() . "\033[0m\n";
+                $output->writeln("<error>Error writing rr.yaml: " . $e->getMessage() . "</error>");
                 return 1;
             }
         }
@@ -145,8 +152,8 @@ final class ServeCommand extends Command
         if ($needsBin) {
             $rrCliPath = $cwd . '/vendor/bin/rr';
             if (!$this->checkFileExists($rrCliPath)) {
-                echo "\033[31mError: RoadRunner CLI utility not found in vendor/bin/rr.\033[0m\n";
-                echo "Please run 'composer install' or 'composer update' first.\n";
+                $output->writeln("<error>Error: RoadRunner CLI utility not found in vendor/bin/rr.</error>");
+                $output->writeln("Please run 'composer install' or 'composer update' first.");
                 return 1;
             }
 
@@ -154,7 +161,7 @@ final class ServeCommand extends Command
                 mkdir($binDir, 0755, true);
             }
 
-            echo "Downloading RoadRunner binary via CLI utility...\n";
+            $output->writeln("Downloading RoadRunner binary via CLI utility...");
 
             $command = sprintf(
                 'php %s get-binary -l %s --no-config --silent --no-interaction',
@@ -163,19 +170,19 @@ final class ServeCommand extends Command
             );
 
             $resultCode = 0;
-            $output = [];
-            exec($command, $output, $resultCode);
+            $execOutput = [];
+            exec($command, $execOutput, $resultCode);
 
             if ($resultCode !== 0) {
-                echo "\033[31mFailed to install RoadRunner binary using CLI utility. Exit code: {$resultCode}\033[0m\n";
+                $output->writeln("<error>Failed to install RoadRunner binary using CLI utility. Exit code: {$resultCode}</error>");
                 return 1;
             }
 
             if ($this->checkFileExists($rrBin)) {
                 chmod($rrBin, 0755);
-                echo "\033[32mSuccessfully installed RoadRunner binary to: {$rrBin}\033[0m\n";
+                $output->writeln("<info>Successfully installed RoadRunner binary to: {$rrBin}</info>");
             } else {
-                echo "\033[31mInstallation failed: rr binary not found at {$rrBin}\033[0m\n";
+                $output->writeln("<error>Installation failed: rr binary not found at {$rrBin}</error>");
                 return 1;
             }
         } else {
@@ -198,8 +205,8 @@ final class ServeCommand extends Command
             }
         }
 
-        echo "\033[32mStarting RoadRunner development server on http://{$host}:{$port}\033[0m\n";
-        echo "Press Ctrl+C to stop.\n\n";
+        $output->writeln("<info>Starting RoadRunner development server on http://{$host}:{$port}</info>");
+        $output->writeln("Press Ctrl+C to stop.\n");
 
         if ($hasCliAddress) {
             $command = sprintf(
@@ -220,7 +227,7 @@ final class ServeCommand extends Command
         return 0;
     }
     
-    private function displayAscii(): void
+    private function displayAscii(OutputInterface $output): void
     {
         $possiblePaths = [
             __DIR__ . '/../../../ascii.txt',
@@ -232,7 +239,7 @@ final class ServeCommand extends Command
             if (file_exists($path)) {
                 $content = file_get_contents($path);
                 if (is_string($content)) {
-                    echo $content . PHP_EOL;
+                    $output->writeln($content);
                     break;
                 }
             }
