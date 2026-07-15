@@ -24,10 +24,22 @@ final class ServeCommand extends Command
         $config = $this->container->get(Config::class);
         /** @var Config $config */
 
+        $cliHost = null;
+        $cliPort = null;
+        foreach ($args as $arg) {
+            if (str_starts_with($arg, '--host=')) {
+                $cliHost = substr($arg, 7);
+            } elseif (str_starts_with($arg, '--port=')) {
+                $cliPort = substr($arg, 7);
+            }
+        }
+
         $hostVal = $config->get('app.host', '127.0.0.1');
         $portVal = $config->get('app.port', '8000');
-        $host = is_scalar($hostVal) ? (string) $hostVal : '127.0.0.1';
-        $port = is_scalar($portVal) ? (string) $portVal : '8000';
+        $host = $cliHost ?? (is_scalar($hostVal) ? (string) $hostVal : '127.0.0.1');
+        $port = $cliPort ?? (is_scalar($portVal) ? (string) $portVal : '8000');
+
+        $hasCliAddress = $cliHost !== null || $cliPort !== null;
         
         $this->displayAscii();
 
@@ -170,15 +182,39 @@ final class ServeCommand extends Command
             chmod($rrBin, 0755);
         }
 
+        if (!$hasCliAddress && file_exists($rrYaml)) {
+            try {
+                $yamlData = \Symfony\Component\Yaml\Yaml::parseFile($rrYaml);
+                if (is_array($yamlData) && isset($yamlData['http']) && is_array($yamlData['http']) && isset($yamlData['http']['address']) && is_string($yamlData['http']['address'])) {
+                    $address = $yamlData['http']['address'];
+                    $parts = explode(':', $address);
+                    if (count($parts) === 2) {
+                        $host = $parts[0];
+                        $port = $parts[1];
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore parsing errors, fall back to defaults
+            }
+        }
+
         echo "\033[32mStarting RoadRunner development server on http://{$host}:{$port}\033[0m\n";
         echo "Press Ctrl+C to stop.\n\n";
 
-        $command = sprintf(
-            '%s serve -c %s -o http.address=%s',
-            escapeshellarg($rrBin),
-            escapeshellarg($rrYaml),
-            escapeshellarg($host . ':' . $port)
-        );
+        if ($hasCliAddress) {
+            $command = sprintf(
+                '%s serve -c %s -o http.address=%s',
+                escapeshellarg($rrBin),
+                escapeshellarg($rrYaml),
+                escapeshellarg($host . ':' . $port)
+            );
+        } else {
+            $command = sprintf(
+                '%s serve -c %s',
+                escapeshellarg($rrBin),
+                escapeshellarg($rrYaml)
+            );
+        }
 
         passthru($command);
         return 0;

@@ -248,4 +248,91 @@ PHP;
             $GLOBALS['last_executed_command'] = null;
         }
     });
+
+    test('serve command does not override host and port if CLI arguments are not provided', function () {
+        $GLOBALS['last_executed_command'] = null;
+
+        $originalCwd = getcwd();
+        $tempDir = sys_get_temp_dir() . '/stout_serve_no_cli_test_' . uniqid();
+        @mkdir($tempDir, 0755, true);
+
+        // Pre-create rr.yaml
+        file_put_contents($tempDir . '/rr.yaml', "http:\n  address: \"0.0.0.0:8001\"\n");
+
+        // Pre-create bin/rr
+        @mkdir($tempDir . '/bin', 0755, true);
+        $binName = PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr';
+        file_put_contents($tempDir . '/bin/' . $binName, "dummy binary");
+
+        chdir($tempDir);
+
+        try {
+            $app = \Stout\Tests\bootTestApp();
+            $command = new ServeCommand($app->getContainer());
+
+            ob_start();
+            $exitCode = $command->execute([]);
+            $outputContent = ob_get_clean();
+
+            expect($exitCode)->toBe(0);
+            expect($outputContent)->toContain('Starting RoadRunner development server on http://0.0.0.0:8001');
+            
+            // Check that passthru command does not contain -o http.address=
+            expect($GLOBALS['last_executed_command'])->not()->toContain('-o http.address=');
+        } finally {
+            @unlink($tempDir . '/bin/' . (PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr'));
+            @rmdir($tempDir . '/bin');
+            @unlink($tempDir . '/rr.yaml');
+            @rmdir($tempDir . '/public');
+            @rmdir($tempDir);
+            if (is_string($originalCwd)) {
+                chdir($originalCwd);
+            }
+            $GLOBALS['last_executed_command'] = null;
+        }
+    });
+
+    test('serve command overrides host and port if CLI arguments are provided', function () {
+        $GLOBALS['last_executed_command'] = null;
+
+        $originalCwd = getcwd();
+        $tempDir = sys_get_temp_dir() . '/stout_serve_with_cli_test_' . uniqid();
+        @mkdir($tempDir, 0755, true);
+
+        // Pre-create rr.yaml
+        file_put_contents($tempDir . '/rr.yaml', "http:\n  address: \"0.0.0.0:8001\"\n");
+
+        // Pre-create bin/rr
+        @mkdir($tempDir . '/bin', 0755, true);
+        $binName = PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr';
+        file_put_contents($tempDir . '/bin/' . $binName, "dummy binary");
+
+        chdir($tempDir);
+
+        try {
+            $app = \Stout\Tests\bootTestApp();
+            $command = new ServeCommand($app->getContainer());
+
+            ob_start();
+            $exitCode = $command->execute(['--host=127.0.0.1', '--port=9000']);
+            $outputContent = ob_get_clean();
+
+            expect($exitCode)->toBe(0);
+            expect($outputContent)->toContain('Starting RoadRunner development server on http://127.0.0.1:9000');
+            
+            // Check that passthru command contains -o http.address= and the value
+            expect($GLOBALS['last_executed_command'])->toContain('-o http.address=')
+                ->and($GLOBALS['last_executed_command'])->toContain('127.0.0.1:9000');
+        } finally {
+            @unlink($tempDir . '/bin/' . (PHP_OS_FAMILY === 'Windows' ? 'rr.exe' : 'rr'));
+            @rmdir($tempDir . '/bin');
+            @unlink($tempDir . '/rr.yaml');
+            @rmdir($tempDir . '/public');
+            @rmdir($tempDir);
+            if (is_string($originalCwd)) {
+                chdir($originalCwd);
+            }
+            $GLOBALS['last_executed_command'] = null;
+        }
+    });
 }
