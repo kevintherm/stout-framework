@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.3', '8.4']
+        php-version: ['8.3', '8.4', '8.5']
 
     steps:
       - name: Checkout code
@@ -43,7 +43,12 @@ jobs:
             ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
+        run: |
+          if [ "${{ matrix.php-version }}" = "8.3" ]; then
+            composer update --no-interaction --no-progress --prefer-dist
+          else
+            composer install --no-interaction --no-progress --prefer-dist
+          fi
 
       - name: Run Static Analysis (PHPStan)
         run: composer analyse
