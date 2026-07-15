@@ -17,6 +17,7 @@ use Slim\Psr7\Factory\UploadedFileFactory;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
 use Stout\Config\Config;
+use Stout\Contracts\HttpErrorRenderer;
 use Stout\Http\Factory\DecoratedResponseFactory;
 use Stout\Http\Middleware\ErrorMiddleware;
 use Stout\Http\Request;
@@ -58,6 +59,8 @@ final class Kernel
 
     /**
      * Add middleware to the global HTTP stack.
+     *
+     * @param MiddlewareInterface|string|callable $middleware
      */
     public function middleware(MiddlewareInterface|string|callable $middleware): self
     {
@@ -78,11 +81,14 @@ final class Kernel
         $logger = $this->container->get(\Psr\Log\LoggerInterface::class);
         /** @var \Psr\Log\LoggerInterface $logger */
 
+        $errorRenderer = $this->container->get(HttpErrorRenderer::class);
+        /** @var HttpErrorRenderer $errorRenderer */
+
         $this->app->addRoutingMiddleware();
 
         $this->app->add(new ErrorMiddleware(
-            responseFactory: new DecoratedResponseFactory(new ResponseFactory(), new StreamFactory()),
             logger: $logger,
+            errorRenderer: $errorRenderer,
             displayErrorDetails: $debug,
             logErrors: true
         ));

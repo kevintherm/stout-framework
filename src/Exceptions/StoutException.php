@@ -11,7 +11,7 @@ use RuntimeException;
  *
  * @phpstan-type Context array<string, mixed>
  */
-final class StoutException extends RuntimeException
+class StoutException extends RuntimeException
 {
     /** @param Context $context */
     public function __construct(

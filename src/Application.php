@@ -12,6 +12,7 @@ use Stout\Config\Config;
 use Stout\Console\Command;
 use Stout\Console\Kernel as ConsoleKernel;
 use Stout\Container\ContainerFactory;
+use Stout\Contracts\HttpErrorRenderer;
 use Stout\Http\Kernel as HttpKernel;
 use Stout\Http\RequestLifecycle;
 use Stout\Log\Logger;
@@ -78,6 +79,7 @@ final class Application
                 return new Logger($logPath, $timezone);
             },
             RequestLifecycle::class => fn(ContainerInterface $c) => new RequestLifecycle(),
+            HttpErrorRenderer::class => \DI\autowire(\Stout\Http\Renderer\JsonErrorRenderer::class),
         ];
 
         $this->container = ContainerFactory::build($config, $providers, $definitions);

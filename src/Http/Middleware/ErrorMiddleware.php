@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Stout\Http\Middleware;
 
-use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use Stout\Exceptions\StoutException;
+use Slim\Exception\HttpSpecializedException;
+use Stout\Contracts\HttpErrorRenderer;
+use Stout\Exceptions\HttpException;
 use Throwable;
 
 final readonly class ErrorMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private ResponseFactoryInterface $responseFactory,
         private LoggerInterface $logger,
+        private HttpErrorRenderer $errorRenderer,
         private bool $displayErrorDetails = false,
         private bool $logErrors = false,
     ) {}
@@ -38,32 +39,44 @@ final readonly class ErrorMiddleware implements MiddlewareInterface
                 ]);
             }
 
-            $response = $this->responseFactory->createResponse(500)
-                ->withHeader('Content-Type', 'application/json');
+            $statusCode = $this->resolveHttpStatusCode($exception);
 
-            $payload = [
-                'error' => true,
-                'message' => $this->displayErrorDetails ? $exception->getMessage() : 'Internal Server Error',
-            ];
+            $response = $this->errorRenderer->render(
+                $exception,
+                $statusCode,
+                $request,
+                $this->displayErrorDetails,
+            );
 
-            if ($this->displayErrorDetails) {
-                $payload['exception'] = get_class($exception);
-                $payload['trace'] = explode("\n", $exception->getTraceAsString());
-                
-                if ($exception instanceof StoutException) {
-                    $payload['context'] = $exception->getContext();
+            if ($exception instanceof HttpException) {
+                foreach ($exception->getHeaders() as $name => $value) {
+                    $response = $response->withHeader($name, $value);
                 }
-            }
-
-            $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            
-            if ($json === false) {
-                $response->getBody()->write((string) json_encode(['error' => true, 'message' => $exception->getMessage()]));
-            } else {
-                $response->getBody()->write($json);
             }
 
             return $response;
         }
+    }
+
+    /**
+     * Resolve the appropriate HTTP status code from the thrown exception.
+     *
+     * Slim's HttpSpecializedException subclasses (HttpNotFoundException, etc.)
+     * carry the correct status code via getCode(). For any other exception,
+     * defaults to 500 Internal Server Error.
+     */
+    private function resolveHttpStatusCode(Throwable $exception): int
+    {
+        if ($exception instanceof HttpSpecializedException) {
+            return $exception->getCode();
+        }
+
+        $code = $exception->getCode();
+
+        if (is_int($code) && $code >= 400 && $code < 600) {
+            return $code;
+        }
+
+        return 500;
     }
 }
