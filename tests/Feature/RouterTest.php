@@ -58,3 +58,48 @@ test('independent routers can be created, mounted, merged and registered', funct
         'search' => 'test'
     ]);
 });
+
+test('router handles redirect and permanentRedirect', function () {
+    $basePath = realpath(__DIR__ . '/../../');
+    $app = new Application(
+        basePath: is_string($basePath) ? $basePath : __DIR__ . '/../../'
+    );
+
+    $app->make(\Stout\Config\Config::class)->loadGroup('app', ['debug' => true]);
+    $app->http()->bootstrap();
+
+    $router = new Router();
+    $router->redirect('/old-path', '/new-path');
+    $router->permanentRedirect('/permanent-old', '/permanent-new');
+    $router->redirect('/user/{id}/profile', '/profile/{id}');
+
+    $app->http()->routes($router);
+
+    // Test 302 redirect
+    $psr7Request1 = \Slim\Psr7\Factory\ServerRequestFactory::createFromGlobals()
+        ->withMethod('GET')
+        ->withUri(new \Slim\Psr7\Uri('', '', null, '/old-path'));
+    $request1 = new Request($psr7Request1);
+    $response1 = $app->http()->handle($request1);
+    expect($response1->getStatusCode())->toBe(302);
+    expect($response1->getHeaderLine('Location'))->toBe('/new-path');
+
+    // Test 301 redirect
+    $psr7Request2 = \Slim\Psr7\Factory\ServerRequestFactory::createFromGlobals()
+        ->withMethod('GET')
+        ->withUri(new \Slim\Psr7\Uri('', '', null, '/permanent-old'));
+    $request2 = new Request($psr7Request2);
+    $response2 = $app->http()->handle($request2);
+    expect($response2->getStatusCode())->toBe(301);
+    expect($response2->getHeaderLine('Location'))->toBe('/permanent-new');
+
+    // Test parameterized redirect
+    $psr7Request3 = \Slim\Psr7\Factory\ServerRequestFactory::createFromGlobals()
+        ->withMethod('GET')
+        ->withUri(new \Slim\Psr7\Uri('', '', null, '/user/42/profile'));
+    $request3 = new Request($psr7Request3);
+    $response3 = $app->http()->handle($request3);
+    expect($response3->getStatusCode())->toBe(302);
+    expect($response3->getHeaderLine('Location'))->toBe('/profile/42');
+});
+

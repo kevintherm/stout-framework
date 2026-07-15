@@ -93,6 +93,30 @@ final class Router
     }
 
     /**
+     * Register a redirect route.
+     */
+    public function redirect(string $from, string $to, int $status = 302): Route
+    {
+        return $this->any($from, function (Request $request, Response $response, array $args) use ($to, $status) {
+            $destination = $to;
+            foreach ($args as $key => $value) {
+                if (is_scalar($value)) {
+                    $destination = str_replace('{' . $key . '}', (string) $value, $destination);
+                }
+            }
+            return $response->redirect($destination, $status);
+        });
+    }
+
+    /**
+     * Register a permanent redirect route.
+     */
+    public function permanentRedirect(string $from, string $to): Route
+    {
+        return $this->redirect($from, $to, 301);
+    }
+
+    /**
      * Add middleware to all routes registered in this router and its sub-routers.
      *
      * @param callable|\Psr\Http\Server\MiddlewareInterface|string $middleware

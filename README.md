@@ -119,7 +119,7 @@ A wrapper around the Slim 4 App instance:
 - **Error Handling**: Implements a dedicated `ErrorMiddleware` that formats unhandled exceptions as structured JSON responses.
 
 ### 5. `Stout\Console\Kernel` & Commands
-A custom, lightweight console implementation:
+A console implementation built on top of **Symfony Console**:
 - **`ListCommand`**: Displays the application ASCII banner with version parsed from `composer.json`, and lists all registered commands.
 - **`ServeCommand`**: Starts the RoadRunner application server by default. Automatically triggers binary download and scaffolding if not present. Falls back to the PHP built-in server via `php app.php serve --php`.
 
