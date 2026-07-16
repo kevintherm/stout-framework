@@ -68,7 +68,7 @@ final class Application
         }
 
         $definitions = [
-            ConsoleKernel::class => fn(ContainerInterface $c) => new ConsoleKernel($c),
+            ConsoleKernel::class => fn(ContainerInterface $c) => new ConsoleKernel($c, $commands),
             self::class => $this,
             ResponseFactoryInterface::class => function (ContainerInterface $c) {
                 return new \Stout\Http\Factory\DecoratedResponseFactory(

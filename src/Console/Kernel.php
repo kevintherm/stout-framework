@@ -19,14 +19,19 @@ final class Kernel
 
     /**
      * @param ContainerInterface $container
+     * @param array<class-string<Command>> $commandClasses
      */
     public function __construct(
-        private readonly ContainerInterface $container
+        private readonly ContainerInterface $container,
+        array $commandClasses = []
     ) {
         $version = $this->resolveVersion();
         $this->cliApp = new SymfonyApplication('Stout', $version);
 
         $this->registerBuiltInCommands();
+        foreach ($commandClasses as $class) {
+            $this->register($class);
+        }
     }
 
     private function registerBuiltInCommands(): void
