@@ -10,6 +10,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Stout\Config\Config;
 use Stout\Console\Command;
+use Stout\Console\Commands\ListCommand;
+use Stout\Console\Commands\ServeCommand;
 use Stout\Console\Kernel as ConsoleKernel;
 use Stout\Container\ContainerFactory;
 use Stout\Contracts\HttpErrorRenderer;
@@ -56,9 +58,17 @@ final class Application
             ],
         ]);
 
-        /** @var array<string, mixed> $definitions */
+        /** @var array<string, mixed> $commandDefinitions */
+        $commandDefinitions = [
+            ListCommand::class => \DI\autowire(ListCommand::class),
+            ServeCommand::class => \DI\autowire(ServeCommand::class),
+        ];
+        foreach ($commands as $commandClass) {
+            $commandDefinitions[$commandClass] = \DI\autowire($commandClass);
+        }
+
         $definitions = [
-            ConsoleKernel::class => fn(ContainerInterface $c) => new ConsoleKernel($c, $commands),
+            ConsoleKernel::class => fn(ContainerInterface $c) => new ConsoleKernel($c),
             self::class => $this,
             ResponseFactoryInterface::class => function (ContainerInterface $c) {
                 return new \Stout\Http\Factory\DecoratedResponseFactory(
@@ -82,7 +92,7 @@ final class Application
             HttpErrorRenderer::class => \DI\autowire(\Stout\Http\Renderer\JsonErrorRenderer::class),
         ];
 
-        $this->container = ContainerFactory::build($config, $providers, $definitions);
+        $this->container = ContainerFactory::build($config, $providers, array_merge($definitions, $commandDefinitions));
     }
 
     public static function getInstance(): self

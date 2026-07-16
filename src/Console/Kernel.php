@@ -19,23 +19,20 @@ final class Kernel
 
     /**
      * @param ContainerInterface $container
-     * @param array<class-string<Command>> $commandClasses
      */
     public function __construct(
-        private readonly ContainerInterface $container,
-        array $commandClasses = []
+        private readonly ContainerInterface $container
     ) {
         $version = $this->resolveVersion();
         $this->cliApp = new SymfonyApplication('Stout', $version);
 
-        $builtIns = [
-            ListCommand::class,
-            ServeCommand::class,
-        ];
+        $this->registerBuiltInCommands();
+    }
 
-        foreach (array_merge($builtIns, $commandClasses) as $class) {
-            $this->register($class);
-        }
+    private function registerBuiltInCommands(): void
+    {
+        $this->register(ListCommand::class);
+        $this->register(ServeCommand::class);
     }
 
     /**
@@ -49,7 +46,8 @@ final class Kernel
             throw new StoutException("Invalid command class: {$class}. Must extend Stout\\Console\\Command.");
         }
 
-        $command = new $class($this->container);
+        /** @var Command $command */
+        $command = $this->container->get($class);
         $this->cliApp->addCommand($command);
     }
 
